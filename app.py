@@ -2,6 +2,7 @@ import streamlit as st
 
 from utils.pdf_utils import extract_text_from_pdf
 from utils.text_utils import split_text_into_chunks
+from utils.embedding_utils import generate_embeddings
 
 
 st.set_page_config(
@@ -24,26 +25,61 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
 
-    st.success(f"Uploaded successfully: {uploaded_file.name}")
+    st.success(
+        f"Uploaded successfully: {uploaded_file.name}"
+    )
 
     try:
 
-        # Step 1: Extract text from the uploaded PDF
-        extracted_text = extract_text_from_pdf(uploaded_file)
+        # Step 1: Extract text
+        extracted_text = extract_text_from_pdf(
+            uploaded_file
+        )
 
         if extracted_text.strip():
 
             st.subheader("PDF Processing")
 
-            st.success("Text extracted successfully.")
+            st.success(
+                "Text extracted successfully."
+            )
 
-            # Step 2: Split extracted text into chunks
-            chunks = split_text_into_chunks(extracted_text)
+            # Step 2: Split text into chunks
+            chunks = split_text_into_chunks(
+                extracted_text
+            )
 
-            st.write(f"Total text chunks created: {len(chunks)}")
+            st.write(
+                f"Total text chunks created: {len(chunks)}"
+            )
 
-            # Show extracted text
-            with st.expander("View Extracted PDF Text"):
+            # Step 3: Generate embeddings
+            with st.spinner(
+                "Generating embeddings..."
+            ):
+
+                embeddings = generate_embeddings(
+                    chunks
+                )
+
+            st.success(
+                "Embeddings generated successfully."
+            )
+
+            st.write(
+                f"Total embeddings created: {len(embeddings)}"
+            )
+
+            if embeddings:
+
+                st.write(
+                    f"Embedding dimensions: {len(embeddings[0])}"
+                )
+
+            # Show extracted PDF text
+            with st.expander(
+                "View Extracted PDF Text"
+            ):
 
                 st.text_area(
                     "PDF Content",
@@ -51,10 +87,14 @@ if uploaded_file is not None:
                     height=300,
                 )
 
-            # Show a few chunks for testing
-            with st.expander("View Text Chunks"):
+            # Show first three chunks
+            with st.expander(
+                "View Text Chunks"
+            ):
 
-                for index, chunk in enumerate(chunks[:3]):
+                for index, chunk in enumerate(
+                    chunks[:3]
+                ):
 
                     st.markdown(
                         f"### Chunk {index + 1}"
