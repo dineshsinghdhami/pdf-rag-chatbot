@@ -3,6 +3,7 @@ import streamlit as st
 from utils.pdf_utils import extract_text_from_pdf
 from utils.text_utils import split_text_into_chunks
 from utils.embedding_utils import generate_embeddings
+from utils.vector_store_utils import create_vector_store
 
 
 st.set_page_config(
@@ -75,6 +76,19 @@ if uploaded_file is not None:
                 st.write(
                     f"Embedding dimensions: {len(embeddings[0])}"
                 )
+
+            # Step 4: Store chunks in ChromaDB
+            with st.spinner(
+                "Creating vector database..."
+            ):
+
+                vector_store = create_vector_store(
+                    chunks
+                )
+
+            st.success(
+                "Vector database created successfully."
+            )
 
             # Show extracted PDF text
             with st.expander(
