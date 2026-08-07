@@ -1,45 +1,117 @@
 # # PDF RAG Chatbot
 
-A beginner-friendly AI project that will allow users to upload PDF documents and ask questions based on their content using Retrieval-Augmented Generation (RAG).
+An AI-powered PDF Question Answering application built with Python, Streamlit, LangChain, ChromaDB, Hugging Face Embeddings, and Groq LLM. The application uses Retrieval-Augmented Generation (RAG) to answer user questions based on uploaded PDF documents.
+
+---
 
 ## # Project Status
 
-### # Completed Today
+### # Completed
 
-* Created the project folder
-* Opened the project in Visual Studio Code
-* Created a Python virtual environment
-* Installed Streamlit and PyPDF
-* Created the basic Streamlit interface
-* Added a PDF upload feature
-* Tested the application locally
+- Created the project structure
+- Set up a Python virtual environment
+- Installed all required dependencies
+- Built the Streamlit user interface
+- Added PDF upload functionality
+- Extracted text from uploaded PDF documents
+- Refactored PDF processing into reusable utility modules
+- Split PDF text into semantic chunks using LangChain
+- Generated embeddings using Hugging Face Sentence Transformers
+- Created an in-memory Chroma Vector Database
+- Implemented semantic similarity search
+- Integrated Groq LLM for answer generation
+- Connected Retrieval-Augmented Generation (RAG) pipeline
+- Displayed retrieved document sources
+- Tested the complete application locally
+
+---
 
 ## # Current Features
 
-* Simple Streamlit user interface
-* PDF file uploader
-* PDF file type validation
-* Upload success message
-* Basic project structure
+- Upload PDF documents
+- Automatic PDF text extraction
+- Intelligent document chunking
+- Hugging Face embedding generation
+- Chroma Vector Database
+- Semantic similarity search
+- AI-powered question answering using Groq
+- Source chunk visualization
+- Clean and modular project structure
+
+---
 
 ## # Project Structure
 
 ```text
 pdf-rag-chatbot/
+│
 ├── data/
+│
 ├── utils/
-├── .gitignore
+│   ├── pdf_utils.py
+│   ├── text_utils.py
+│   ├── embedding_utils.py
+│   ├── vector_store_utils.py
+│   └── llm_utils.py
+│
 ├── app.py
-├── README.md
 ├── requirements.txt
-└── .venv/
+├── README.md
+├── .gitignore
+└── .env
 ```
+
+---
+
+## # RAG Pipeline
+
+```text
+User Uploads PDF
+        │
+        ▼
+Extract PDF Text
+        │
+        ▼
+Split Text into Chunks
+        │
+        ▼
+Generate Embeddings
+        │
+        ▼
+Store Embeddings in ChromaDB
+        │
+        ▼
+User Asks a Question
+        │
+        ▼
+Semantic Similarity Search
+        │
+        ▼
+Retrieve Relevant Chunks
+        │
+        ▼
+Groq LLM
+        │
+        ▼
+Generate Final Answer
+```
+
+---
 
 ## # Technologies Used
 
-* Python
-* Streamlit
-* PyPDF
+- Python
+- Streamlit
+- PyPDF
+- LangChain
+- LangChain Text Splitters
+- LangChain Chroma
+- ChromaDB
+- Hugging Face Sentence Transformers
+- Groq API
+- Python Dotenv
+
+---
 
 ## # Installation
 
@@ -63,7 +135,7 @@ python -m venv .venv
 
 ### 4. Activate the virtual environment
 
-On Windows:
+Windows
 
 ```bash
 .venv\Scripts\activate
@@ -75,28 +147,89 @@ On Windows:
 python -m pip install -r requirements.txt
 ```
 
-### 6. Run the application
+### 6. Configure Environment Variables
+
+Create a `.env` file in the project root.
+
+```env
+GROQ_API_KEY=YOUR_GROQ_API_KEY
+```
+
+### 7. Run the application
 
 ```bash
 python -m streamlit run app.py
 ```
 
-The application will normally open at:
+The application will open at:
 
 ```text
 http://localhost:8501
 ```
 
-## # Next Steps
+---
 
-* Extract text from uploaded PDF files
-* Split PDF text into smaller chunks
-* Generate text embeddings
-* Store embeddings in a vector database
-* Retrieve relevant document sections
-* Connect the application to an LLM
-* Display answers with source references
+## # Application Workflow
+
+1. Upload a PDF document.
+2. The application extracts all readable text.
+3. The text is divided into semantic chunks.
+4. Embeddings are generated for every chunk.
+5. Chunks are stored inside Chroma Vector Database.
+6. User asks a natural language question.
+7. Semantic search retrieves the most relevant chunks.
+8. Groq LLM generates the final answer using only the retrieved context.
+9. Retrieved source chunks are displayed for transparency.
+
+---
+
+## # Example Questions
+
+- What skills does the applicant have?
+- What projects are mentioned?
+- What programming languages are listed?
+- What certifications does the candidate hold?
+- Summarize this resume.
+- What is the candidate's education?
+
+---
+
+## # Learning Outcomes
+
+This project demonstrates understanding of:
+
+- Retrieval-Augmented Generation (RAG)
+- Vector Embeddings
+- Semantic Search
+- Chroma Vector Database
+- LangChain Framework
+- Prompt Engineering
+- Streamlit Application Development
+- Modular Python Programming
+- Environment Variable Management
+- LLM Integration
+
+---
+
+## # Future Improvements
+
+- Persistent Chroma database
+- Multiple PDF support
+- Chat history
+- Conversation memory
+- Source citations with page numbers
+- Better UI/UX
+- Streaming LLM responses
+- Docker support
+- Cloud deployment
+- User authentication
+- PDF summarization
+- Export chat history
+
+---
 
 ## # Author
 
-Created as a beginner RAG learning project.
+**Dinesh Singh Dhami**
+
+Built as a personal learning project to understand Retrieval-Augmented Generation (RAG), vector databases, semantic search, and modern LLM application development.
