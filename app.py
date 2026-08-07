@@ -3,7 +3,10 @@ import streamlit as st
 from utils.pdf_utils import extract_text_from_pdf
 from utils.text_utils import split_text_into_chunks
 from utils.embedding_utils import generate_embeddings
-from utils.vector_store_utils import create_vector_store
+from utils.vector_store_utils import (
+    create_vector_store,
+    search_vector_store,
+)
 
 
 st.set_page_config(
@@ -32,7 +35,7 @@ if uploaded_file is not None:
 
     try:
 
-        # Step 1: Extract text
+        # Step 1: Extract PDF text
         extracted_text = extract_text_from_pdf(
             uploaded_file
         )
@@ -77,7 +80,7 @@ if uploaded_file is not None:
                     f"Embedding dimensions: {len(embeddings[0])}"
                 )
 
-            # Step 4: Store chunks in ChromaDB
+            # Step 4: Create vector database
             with st.spinner(
                 "Creating vector database..."
             ):
@@ -90,7 +93,54 @@ if uploaded_file is not None:
                 "Vector database created successfully."
             )
 
-            # Show extracted PDF text
+            st.divider()
+
+            # Step 5: Ask a question
+            st.subheader("Ask a Question")
+
+            user_question = st.text_input(
+                "Ask something about the uploaded PDF"
+            )
+
+            if user_question:
+
+                with st.spinner(
+                    "Searching the document..."
+                ):
+
+                    relevant_documents = search_vector_store(
+                        vector_store,
+                        user_question,
+                        k=3,
+                    )
+
+                st.subheader(
+                    "Most Relevant PDF Content"
+                )
+
+                if relevant_documents:
+
+                    for index, document in enumerate(
+                        relevant_documents
+                    ):
+
+                        st.markdown(
+                            f"### Result {index + 1}"
+                        )
+
+                        st.write(
+                            document.page_content
+                        )
+
+                        st.divider()
+
+                else:
+
+                    st.warning(
+                        "No relevant content was found."
+                    )
+
+            # Extracted PDF text
             with st.expander(
                 "View Extracted PDF Text"
             ):
@@ -101,7 +151,7 @@ if uploaded_file is not None:
                     height=300,
                 )
 
-            # Show first three chunks
+            # First three chunks
             with st.expander(
                 "View Text Chunks"
             ):

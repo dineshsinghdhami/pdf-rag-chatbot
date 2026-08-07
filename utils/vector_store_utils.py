@@ -17,3 +17,17 @@ def create_vector_store(chunks):
     )
 
     return vector_store
+
+
+def search_vector_store(vector_store, query, k=3):
+    """
+    Search the vector database and return
+    the most relevant document chunks.
+    """
+
+    results = vector_store.similarity_search(
+        query=query,
+        k=k,
+    )
+
+    return results
