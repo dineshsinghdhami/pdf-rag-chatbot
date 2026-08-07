@@ -7,6 +7,7 @@ from utils.vector_store_utils import (
     create_vector_store,
     search_vector_store,
 )
+from utils.llm_utils import generate_answer
 
 
 st.set_page_config(
@@ -95,7 +96,7 @@ if uploaded_file is not None:
 
             st.divider()
 
-            # Step 5: Ask a question
+            # Step 5: Ask question
             st.subheader("Ask a Question")
 
             user_question = st.text_input(
@@ -104,6 +105,7 @@ if uploaded_file is not None:
 
             if user_question:
 
+                # Step 6: Retrieve relevant chunks
                 with st.spinner(
                     "Searching the document..."
                 ):
@@ -114,18 +116,30 @@ if uploaded_file is not None:
                         k=3,
                     )
 
-                st.subheader(
-                    "Most Relevant PDF Content"
-                )
+                # Step 7: Generate final answer
+                with st.spinner(
+                    "Generating answer..."
+                ):
 
-                if relevant_documents:
+                    answer = generate_answer(
+                        user_question,
+                        relevant_documents,
+                    )
+
+                st.subheader("Answer")
+
+                st.write(answer)
+
+                with st.expander(
+                    "View Retrieved Sources"
+                ):
 
                     for index, document in enumerate(
                         relevant_documents
                     ):
 
                         st.markdown(
-                            f"### Result {index + 1}"
+                            f"### Source {index + 1}"
                         )
 
                         st.write(
@@ -134,13 +148,6 @@ if uploaded_file is not None:
 
                         st.divider()
 
-                else:
-
-                    st.warning(
-                        "No relevant content was found."
-                    )
-
-            # Extracted PDF text
             with st.expander(
                 "View Extracted PDF Text"
             ):
@@ -151,7 +158,6 @@ if uploaded_file is not None:
                     height=300,
                 )
 
-            # First three chunks
             with st.expander(
                 "View Text Chunks"
             ):
