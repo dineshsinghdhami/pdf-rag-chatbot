@@ -9,13 +9,13 @@ CHROMA_DB_PATH = "./chroma_db"
 def create_vector_store(chunks):
     """
     Create and persist a Chroma vector store
-    from PDF text chunks.
+    from LangChain Document chunks.
     """
 
     embedding_model = get_embedding_model()
 
-    vector_store = Chroma.from_texts(
-        texts=chunks,
+    vector_store = Chroma.from_documents(
+        documents=chunks,
         embedding=embedding_model,
         collection_name="pdf_documents",
         persist_directory=CHROMA_DB_PATH,
@@ -40,7 +40,11 @@ def load_vector_store():
     return vector_store
 
 
-def search_vector_store(vector_store, query, k=3):
+def search_vector_store(
+    vector_store,
+    query,
+    k=3,
+):
     """
     Search the vector database and return
     the most relevant document chunks.
