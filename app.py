@@ -10,17 +10,80 @@ from utils.vector_store_utils import (
 from utils.llm_utils import generate_answer
 
 
+# -------------------------------------------------
+# Page Configuration
+# -------------------------------------------------
+
 st.set_page_config(
     page_title="PDF RAG Chatbot",
     page_icon="📄",
     layout="centered",
+    initial_sidebar_state="collapsed",
 )
 
-st.title("📄 PDF RAG Chatbot")
 
-st.write(
-    "Upload one or more PDF documents and ask questions "
-    "based on their content."
+# -------------------------------------------------
+# Custom Styling
+# -------------------------------------------------
+
+st.markdown(
+    """
+    <style>
+
+    .block-container {
+        max-width: 850px;
+        padding-top: 3rem;
+        padding-bottom: 5rem;
+    }
+
+    .main-title {
+        text-align: center;
+        font-size: 2.4rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+    }
+
+    .main-subtitle {
+        text-align: center;
+        color: #888888;
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .document-status {
+        text-align: center;
+        padding: 0.65rem 1rem;
+        border-radius: 10px;
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+    }
+
+    .section-label {
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin-top: 1.4rem;
+        margin-bottom: 0.6rem;
+    }
+
+    div[data-testid="stChatMessage"] {
+        border-radius: 14px;
+        padding: 0.3rem 0.4rem;
+        margin-bottom: 0.5rem;
+    }
+
+    div[data-testid="stFileUploader"] {
+        border-radius: 12px;
+    }
+
+    div[data-testid="stExpander"] {
+        border-radius: 10px;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 
@@ -43,414 +106,438 @@ if "embeddings" not in st.session_state:
 if "vector_store" not in st.session_state:
     st.session_state.vector_store = None
 
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
 
 # -------------------------------------------------
-# Upload PDFs
+# Header
+# -------------------------------------------------
+
+st.markdown(
+    '<div class="main-title">📄 PDF RAG Chatbot</div>',
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <div class="main-subtitle">
+        Upload your documents and ask questions using AI-powered retrieval.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# -------------------------------------------------
+# Upload Section
 # -------------------------------------------------
 
 uploaded_files = st.file_uploader(
-    "Choose PDF files",
+    "Upload PDF documents",
     type=["pdf"],
     accept_multiple_files=True,
+    help="You can upload multiple PDF files.",
 )
 
 
-if uploaded_files:
+# -------------------------------------------------
+# Empty State
+# -------------------------------------------------
 
-    uploaded_file_names = sorted(
-        [
-            uploaded_file.name
-            for uploaded_file in uploaded_files
-        ]
+if not uploaded_files:
+
+    st.info(
+        "👆 Upload one or more PDF documents to start."
     )
 
-    st.success(
-        f"{len(uploaded_files)} PDF file(s) uploaded successfully."
-    )
+    st.stop()
 
-    st.write("Uploaded files:")
 
-    for uploaded_file in uploaded_files:
-        st.write(
-            f"- {uploaded_file.name}"
-        )
+uploaded_file_names = sorted(
+    [
+        uploaded_file.name
+        for uploaded_file in uploaded_files
+    ]
+)
 
-    try:
 
-        # -------------------------------------------------
-        # Check whether PDFs need processing
-        # -------------------------------------------------
+# -------------------------------------------------
+# PDF Processing
+# -------------------------------------------------
 
-        if (
-            st.session_state.processed_file_names
-            != uploaded_file_names
+try:
+
+    if (
+        st.session_state.processed_file_names
+        != uploaded_file_names
+    ):
+
+        with st.spinner(
+            "Preparing your documents..."
         ):
 
-            with st.spinner(
-                "Processing PDF documents..."
+            all_documents = []
+
+            # ---------------------------------------------
+            # Extract PDF pages
+            # ---------------------------------------------
+
+            for uploaded_file in uploaded_files:
+
+                pdf_documents = (
+                    extract_documents_from_pdf(
+                        uploaded_file
+                    )
+                )
+
+                all_documents.extend(
+                    pdf_documents
+                )
+
+
+            # ---------------------------------------------
+            # Validate content
+            # ---------------------------------------------
+
+            if not all_documents:
+
+                st.error(
+                    "No readable text was found "
+                    "in the uploaded documents."
+                )
+
+                st.stop()
+
+
+            # ---------------------------------------------
+            # Create chunks
+            # ---------------------------------------------
+
+            chunks = split_documents_into_chunks(
+                all_documents
+            )
+
+
+            # ---------------------------------------------
+            # Generate embeddings
+            # ---------------------------------------------
+
+            embeddings = generate_embeddings(
+                chunks
+            )
+
+
+            # ---------------------------------------------
+            # Create vector database
+            # ---------------------------------------------
+
+            vector_store = create_vector_store(
+                chunks
+            )
+
+
+            # ---------------------------------------------
+            # Save session state
+            # ---------------------------------------------
+
+            st.session_state.processed_file_names = (
+                uploaded_file_names
+            )
+
+            st.session_state.documents = (
+                all_documents
+            )
+
+            st.session_state.chunks = (
+                chunks
+            )
+
+            st.session_state.embeddings = (
+                embeddings
+            )
+
+            st.session_state.vector_store = (
+                vector_store
+            )
+
+            # New documents = new conversation
+            st.session_state.chat_history = []
+
+
+    # -------------------------------------------------
+    # Load Session Data
+    # -------------------------------------------------
+
+    documents = st.session_state.documents
+    chunks = st.session_state.chunks
+    vector_store = st.session_state.vector_store
+
+
+    # -------------------------------------------------
+    # Compact Document Status
+    # -------------------------------------------------
+
+    pdf_count = len(uploaded_files)
+    page_count = len(documents)
+
+    st.markdown(
+        f"""
+        <div class="document-status">
+            ✅ <b>{pdf_count}</b> document(s) ready
+            &nbsp;&nbsp;•&nbsp;&nbsp;
+            {page_count} pages indexed
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+    # -------------------------------------------------
+    # Uploaded Document Details
+    # -------------------------------------------------
+
+    with st.expander(
+        "📚 View uploaded documents"
+    ):
+
+        for file_name in uploaded_file_names:
+
+            st.write(
+                f"📄 {file_name}"
+            )
+
+
+    # -------------------------------------------------
+    # Chat Header
+    # -------------------------------------------------
+
+    header_col, clear_col = st.columns(
+        [6, 1]
+    )
+
+    with header_col:
+
+        st.markdown(
+            '<div class="section-label">💬 Chat with your documents</div>',
+            unsafe_allow_html=True,
+        )
+
+    with clear_col:
+
+        if st.button(
+            "Clear",
+            help="Clear conversation",
+            use_container_width=True,
+        ):
+
+            st.session_state.chat_history = []
+
+            st.rerun()
+
+
+    # -------------------------------------------------
+    # Empty Chat State
+    # -------------------------------------------------
+
+    if not st.session_state.chat_history:
+
+        st.caption(
+            "Ask a question about the information "
+            "inside your uploaded documents."
+        )
+
+
+    # -------------------------------------------------
+    # Display Previous Messages
+    # -------------------------------------------------
+
+    for message in st.session_state.chat_history:
+
+        with st.chat_message(
+            message["role"]
+        ):
+
+            st.markdown(
+                message["content"]
+            )
+
+
+            # ---------------------------------------------
+            # Display Saved Sources
+            # ---------------------------------------------
+
+            if (
+                message["role"] == "assistant"
+                and message.get("sources")
             ):
 
-                all_documents = []
+                source_count = len(
+                    message["sources"]
+                )
 
-                # -----------------------------------------
-                # Extract page documents from PDFs
-                # -----------------------------------------
+                with st.expander(
+                    f"📚 {source_count} source(s)"
+                ):
 
-                for uploaded_file in uploaded_files:
+                    for source in message["sources"]:
 
-                    pdf_documents = (
-                        extract_documents_from_pdf(
-                            uploaded_file
+                        st.caption(
+                            f"📄 {source['file']} "
+                            f"• Page {source['page']}"
                         )
-                    )
 
-                    all_documents.extend(
-                        pdf_documents
-                    )
 
-                # -----------------------------------------
-                # Check for readable content
-                # -----------------------------------------
+    # -------------------------------------------------
+    # Chat Input
+    # -------------------------------------------------
 
-                if not all_documents:
+    user_question = st.chat_input(
+        "Ask a question about your PDFs..."
+    )
 
-                    st.warning(
-                        "No readable text was found "
-                        "in the uploaded PDF files."
-                    )
 
-                    st.stop()
+    if user_question:
 
-                # -----------------------------------------
-                # Split documents into chunks
-                # -----------------------------------------
+        # ---------------------------------------------
+        # Save User Message
+        # ---------------------------------------------
 
-                chunks = split_documents_into_chunks(
-                    all_documents
-                )
+        st.session_state.chat_history.append(
+            {
+                "role": "user",
+                "content": user_question,
+            }
+        )
 
-                # -----------------------------------------
-                # Generate embeddings for testing/statistics
-                # -----------------------------------------
 
-                embeddings = generate_embeddings(
-    chunks
-)
+        # ---------------------------------------------
+        # Display User Message
+        # ---------------------------------------------
 
-                # -----------------------------------------
-                # Create vector database
-                # -----------------------------------------
+        with st.chat_message(
+            "user"
+        ):
 
-                vector_store = create_vector_store(
-                    chunks
-                )
-
-                # -----------------------------------------
-                # Save in session state
-                # -----------------------------------------
-
-                st.session_state.processed_file_names = (
-                    uploaded_file_names
-                )
-
-                st.session_state.documents = (
-                    all_documents
-                )
-
-                st.session_state.chunks = (
-                    chunks
-                )
-
-                st.session_state.embeddings = (
-                    embeddings
-                )
-
-                st.session_state.vector_store = (
-                    vector_store
-                )
-
-            st.success(
-                "PDF documents processed successfully."
-            )
-
-        else:
-
-            st.info(
-                "Using previously processed PDF documents."
+            st.markdown(
+                user_question
             )
 
 
-        # -------------------------------------------------
-        # Load session data
-        # -------------------------------------------------
+        # ---------------------------------------------
+        # Retrieve Relevant Context
+        # ---------------------------------------------
 
-        documents = (
-            st.session_state.documents
-        )
+        with st.spinner(
+            "Finding relevant information..."
+        ):
 
-        chunks = (
-            st.session_state.chunks
-        )
-
-        embeddings = (
-            st.session_state.embeddings
-        )
-
-        vector_store = (
-            st.session_state.vector_store
-        )
-
-
-        # -------------------------------------------------
-        # Processing information
-        # -------------------------------------------------
-
-        st.subheader(
-            "PDF Processing"
-        )
-
-        st.write(
-            f"Total PDFs: {len(uploaded_files)}"
-        )
-
-        st.write(
-            f"Total PDF pages extracted: {len(documents)}"
-        )
-
-        st.write(
-            f"Total text chunks created: {len(chunks)}"
-        )
-
-        st.write(
-            f"Total embeddings created: {len(embeddings)}"
-        )
-
-        if embeddings:
-
-            st.write(
-                f"Embedding dimensions: "
-                f"{len(embeddings[0])}"
-            )
-
-        st.success(
-            "Vector database ready."
-        )
-
-        st.divider()
-
-
-        # -------------------------------------------------
-        # Ask question
-        # -------------------------------------------------
-
-        st.subheader(
-            "Ask a Question"
-        )
-
-        user_question = st.text_input(
-            "Ask something about the uploaded PDFs"
-        )
-
-
-        if user_question:
-
-            # ---------------------------------------------
-            # Semantic search
-            # ---------------------------------------------
-
-            with st.spinner(
-                "Searching the documents..."
-            ):
-
-                relevant_documents = (
-                    search_vector_store(
-                        vector_store,
-                        user_question,
-                        k=3,
-                    )
-                )
-
-            # ---------------------------------------------
-            # Generate answer
-            # ---------------------------------------------
-
-            with st.spinner(
-                "Generating answer..."
-            ):
-
-                answer = generate_answer(
+            relevant_documents = (
+                search_vector_store(
+                    vector_store,
                     user_question,
-                    relevant_documents,
+                    k=3,
+                )
+            )
+
+
+        # ---------------------------------------------
+        # Generate AI Answer
+        # ---------------------------------------------
+
+        with st.spinner(
+            "Thinking..."
+        ):
+
+            answer = generate_answer(
+                user_question,
+                relevant_documents,
+            )
+
+
+        # ---------------------------------------------
+        # Build Source List
+        # ---------------------------------------------
+
+        sources = []
+
+        seen_sources = set()
+
+
+        for document in relevant_documents:
+
+            source = document.metadata.get(
+                "source",
+                "Unknown PDF",
+            )
+
+            page = document.metadata.get(
+                "page",
+                "Unknown",
+            )
+
+            source_key = (
+                source,
+                page,
+            )
+
+
+            if source_key not in seen_sources:
+
+                sources.append(
+                    {
+                        "file": source,
+                        "page": page,
+                    }
+                )
+
+                seen_sources.add(
+                    source_key
                 )
 
 
-            # ---------------------------------------------
-            # Display answer
-            # ---------------------------------------------
+        # ---------------------------------------------
+        # Display AI Response
+        # ---------------------------------------------
 
-            st.subheader(
-                "Answer"
-            )
+        with st.chat_message(
+            "assistant"
+        ):
 
-            st.write(
+            st.markdown(
                 answer
             )
 
 
-            # ---------------------------------------------
-            # Display citations
-            # ---------------------------------------------
+            if sources:
 
-            st.subheader(
-                "Sources"
-            )
-
-            seen_sources = set()
-
-            for document in relevant_documents:
-
-                source = document.metadata.get(
-                    "source",
-                    "Unknown PDF",
-                )
-
-                page = document.metadata.get(
-                    "page",
-                    "Unknown",
-                )
-
-                source_key = (
-                    source,
-                    page,
-                )
-
-                if source_key not in seen_sources:
-
-                    st.write(
-                        f"📄 {source} — Page {page}"
-                    )
-
-                    seen_sources.add(
-                        source_key
-                    )
-
-
-            # ---------------------------------------------
-            # Retrieved source details
-            # ---------------------------------------------
-
-            with st.expander(
-                "View Retrieved Source Content"
-            ):
-
-                for index, document in enumerate(
-                    relevant_documents
+                with st.expander(
+                    f"📚 {len(sources)} source(s)"
                 ):
 
-                    source = document.metadata.get(
-                        "source",
-                        "Unknown PDF",
-                    )
+                    for source in sources:
 
-                    page = document.metadata.get(
-                        "page",
-                        "Unknown",
-                    )
-
-                    st.markdown(
-                        f"### Source {index + 1}"
-                    )
-
-                    st.caption(
-                        f"File: {source} | Page: {page}"
-                    )
-
-                    st.write(
-                        document.page_content
-                    )
-
-                    st.divider()
+                        st.caption(
+                            f"📄 {source['file']} "
+                            f"• Page {source['page']}"
+                        )
 
 
-        # -------------------------------------------------
-        # View extracted pages
-        # -------------------------------------------------
+        # ---------------------------------------------
+        # Save Assistant Response
+        # ---------------------------------------------
 
-        with st.expander(
-            "View Extracted PDF Pages"
-        ):
-
-            for index, document in enumerate(
-                documents[:5]
-            ):
-
-                source = document.metadata.get(
-                    "source",
-                    "Unknown PDF",
-                )
-
-                page = document.metadata.get(
-                    "page",
-                    "Unknown",
-                )
-
-                st.markdown(
-                    f"### {source} — Page {page}"
-                )
-
-                st.write(
-                    document.page_content
-                )
-
-                st.divider()
-
-
-        # -------------------------------------------------
-        # View chunks
-        # -------------------------------------------------
-
-        with st.expander(
-            "View Text Chunks"
-        ):
-
-            for index, chunk in enumerate(
-                chunks[:3]
-            ):
-
-                source = chunk.metadata.get(
-                    "source",
-                    "Unknown PDF",
-                )
-
-                page = chunk.metadata.get(
-                    "page",
-                    "Unknown",
-                )
-
-                st.markdown(
-                    f"### Chunk {index + 1}"
-                )
-
-                st.caption(
-                    f"File: {source} | Page: {page}"
-                )
-
-                st.write(
-                    chunk.page_content
-                )
-
-                st.divider()
-
-
-    except Exception as error:
-
-        st.error(
-            f"Error processing PDFs: {error}"
+        st.session_state.chat_history.append(
+            {
+                "role": "assistant",
+                "content": answer,
+                "sources": sources,
+            }
         )
 
 
-else:
+except Exception as error:
 
-    st.info(
-        "Please upload one or more PDF documents to continue."
+    st.error(
+        f"Something went wrong: {error}"
     )
