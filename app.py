@@ -19,13 +19,17 @@ st.set_page_config(
 st.title("📄 PDF RAG Chatbot")
 
 st.write(
-    "Upload a PDF document and ask questions about its content."
+    "Upload one or more PDF documents and ask questions "
+    "based on their content."
 )
 
 
-# Initialize session state
-if "processed_file_name" not in st.session_state:
-    st.session_state.processed_file_name = None
+# -------------------------------------------------
+# Session State
+# -------------------------------------------------
+
+if "processed_file_names" not in st.session_state:
+    st.session_state.processed_file_names = []
 
 if "extracted_text" not in st.session_state:
     st.session_state.extracted_text = None
@@ -40,64 +44,119 @@ if "vector_store" not in st.session_state:
     st.session_state.vector_store = None
 
 
-uploaded_file = st.file_uploader(
-    "Choose a PDF file",
+# -------------------------------------------------
+# Multiple PDF Upload
+# -------------------------------------------------
+
+uploaded_files = st.file_uploader(
+    "Choose PDF files",
     type=["pdf"],
+    accept_multiple_files=True,
 )
 
 
-if uploaded_file is not None:
+if uploaded_files:
+
+    uploaded_file_names = sorted(
+        [
+            uploaded_file.name
+            for uploaded_file in uploaded_files
+        ]
+    )
 
     st.success(
-        f"Uploaded successfully: {uploaded_file.name}"
+        f"{len(uploaded_files)} PDF file(s) uploaded successfully."
     )
+
+    st.write("Uploaded files:")
+
+    for uploaded_file in uploaded_files:
+        st.write(f"- {uploaded_file.name}")
 
     try:
 
-        # Only process when a new PDF is uploaded
+        # -------------------------------------------------
+        # Check whether PDFs need processing
+        # -------------------------------------------------
+
         if (
-            st.session_state.processed_file_name
-            != uploaded_file.name
+            st.session_state.processed_file_names
+            != uploaded_file_names
         ):
 
             with st.spinner(
-                "Processing PDF..."
+                "Processing PDF documents..."
             ):
 
-                # Step 1: Extract PDF text
-                extracted_text = extract_text_from_pdf(
-                    uploaded_file
-                )
+                combined_text = ""
 
-                if not extracted_text.strip():
+                # -----------------------------------------
+                # Extract text from every uploaded PDF
+                # -----------------------------------------
+
+                for uploaded_file in uploaded_files:
+
+                    pdf_text = extract_text_from_pdf(
+                        uploaded_file
+                    )
+
+                    if pdf_text.strip():
+
+                        combined_text += (
+                            f"\n\n"
+                            f"===== DOCUMENT: {uploaded_file.name} ====="
+                            f"\n\n"
+                        )
+
+                        combined_text += pdf_text
+
+                # -----------------------------------------
+                # Check extracted text
+                # -----------------------------------------
+
+                if not combined_text.strip():
+
                     st.warning(
-                        "No readable text was found in this PDF."
+                        "No readable text was found "
+                        "in the uploaded PDF files."
                     )
 
                     st.stop()
 
-                # Step 2: Split text into chunks
+                # -----------------------------------------
+                # Split combined text into chunks
+                # -----------------------------------------
+
                 chunks = split_text_into_chunks(
-                    extracted_text
+                    combined_text
                 )
 
-                # Step 3: Generate embeddings
+                # -----------------------------------------
+                # Generate embeddings
+                # -----------------------------------------
+
                 embeddings = generate_embeddings(
                     chunks
                 )
 
-                # Step 4: Create persistent vector store
+                # -----------------------------------------
+                # Create vector database
+                # -----------------------------------------
+
                 vector_store = create_vector_store(
                     chunks
                 )
 
-                # Save everything in session state
-                st.session_state.processed_file_name = (
-                    uploaded_file.name
+                # -----------------------------------------
+                # Save data in session state
+                # -----------------------------------------
+
+                st.session_state.processed_file_names = (
+                    uploaded_file_names
                 )
 
                 st.session_state.extracted_text = (
-                    extracted_text
+                    combined_text
                 )
 
                 st.session_state.chunks = (
@@ -113,14 +172,19 @@ if uploaded_file is not None:
                 )
 
             st.success(
-                "PDF processed successfully."
+                "PDF documents processed successfully."
             )
 
         else:
 
             st.info(
-                "Using previously processed PDF."
+                "Using previously processed PDF documents."
             )
+
+
+        # -------------------------------------------------
+        # Load saved session data
+        # -------------------------------------------------
 
         extracted_text = (
             st.session_state.extracted_text
@@ -138,8 +202,17 @@ if uploaded_file is not None:
             st.session_state.vector_store
         )
 
+
+        # -------------------------------------------------
+        # Processing Information
+        # -------------------------------------------------
+
         st.subheader(
             "PDF Processing"
+        )
+
+        st.write(
+            f"Total PDFs: {len(uploaded_files)}"
         )
 
         st.write(
@@ -153,7 +226,8 @@ if uploaded_file is not None:
         if embeddings:
 
             st.write(
-                f"Embedding dimensions: {len(embeddings[0])}"
+                f"Embedding dimensions: "
+                f"{len(embeddings[0])}"
             )
 
         st.success(
@@ -162,26 +236,41 @@ if uploaded_file is not None:
 
         st.divider()
 
-        # Ask question
+
+        # -------------------------------------------------
+        # Ask Question
+        # -------------------------------------------------
+
         st.subheader(
             "Ask a Question"
         )
 
         user_question = st.text_input(
-            "Ask something about the uploaded PDF"
+            "Ask something about the uploaded PDFs"
         )
+
 
         if user_question:
 
+            # ---------------------------------------------
+            # Semantic Search
+            # ---------------------------------------------
+
             with st.spinner(
-                "Searching the document..."
+                "Searching the documents..."
             ):
 
-                relevant_documents = search_vector_store(
-                    vector_store,
-                    user_question,
-                    k=3,
+                relevant_documents = (
+                    search_vector_store(
+                        vector_store,
+                        user_question,
+                        k=3,
+                    )
                 )
+
+            # ---------------------------------------------
+            # Generate Answer
+            # ---------------------------------------------
 
             with st.spinner(
                 "Generating answer..."
@@ -192,6 +281,11 @@ if uploaded_file is not None:
                     relevant_documents,
                 )
 
+
+            # ---------------------------------------------
+            # Display Answer
+            # ---------------------------------------------
+
             st.subheader(
                 "Answer"
             )
@@ -199,6 +293,11 @@ if uploaded_file is not None:
             st.write(
                 answer
             )
+
+
+            # ---------------------------------------------
+            # Show Retrieved Sources
+            # ---------------------------------------------
 
             with st.expander(
                 "View Retrieved Sources"
@@ -218,6 +317,11 @@ if uploaded_file is not None:
 
                     st.divider()
 
+
+        # -------------------------------------------------
+        # View Combined Extracted Text
+        # -------------------------------------------------
+
         with st.expander(
             "View Extracted PDF Text"
         ):
@@ -227,6 +331,11 @@ if uploaded_file is not None:
                 extracted_text,
                 height=300,
             )
+
+
+        # -------------------------------------------------
+        # View First Three Chunks
+        # -------------------------------------------------
 
         with st.expander(
             "View Text Chunks"
@@ -246,14 +355,16 @@ if uploaded_file is not None:
 
                 st.divider()
 
+
     except Exception as error:
 
         st.error(
-            f"Error processing PDF: {error}"
+            f"Error processing PDFs: {error}"
         )
+
 
 else:
 
     st.info(
-        "Please upload a PDF document to continue."
+        "Please upload one or more PDF documents to continue."
     )
