@@ -1,9 +1,11 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-def split_text_into_chunks(text):
+def split_documents_into_chunks(documents):
     """
-    Split extracted PDF text into smaller overlapping chunks.
+    Split LangChain Document objects into smaller chunks
+    while preserving metadata such as source filename
+    and page number.
     """
 
     text_splitter = RecursiveCharacterTextSplitter(
@@ -12,6 +14,8 @@ def split_text_into_chunks(text):
         length_function=len,
     )
 
-    chunks = text_splitter.split_text(text)
+    chunks = text_splitter.split_documents(
+        documents
+    )
 
     return chunks

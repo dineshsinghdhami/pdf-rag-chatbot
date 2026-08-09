@@ -133,14 +133,9 @@ if uploaded_files:
                 # Generate embeddings for testing/statistics
                 # -----------------------------------------
 
-                chunk_texts = [
-                    chunk.page_content
-                    for chunk in chunks
-                ]
-
                 embeddings = generate_embeddings(
-                    chunk_texts
-                )
+    chunks
+)
 
                 # -----------------------------------------
                 # Create vector database

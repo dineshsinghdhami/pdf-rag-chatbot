@@ -1,19 +1,34 @@
 from pypdf import PdfReader
+from langchain_core.documents import Document
 
 
-def extract_text_from_pdf(uploaded_file):
+def extract_documents_from_pdf(uploaded_file):
     """
-    Extract all readable text from a PDF file.
+    Extract text from each page of an uploaded PDF.
+
+    Each page is returned as a LangChain Document
+    containing filename and page number metadata.
     """
 
     pdf_reader = PdfReader(uploaded_file)
 
-    extracted_text = ""
+    documents = []
 
-    for page in pdf_reader.pages:
+    for page_number, page in enumerate(
+        pdf_reader.pages,
+        start=1,
+    ):
         page_text = page.extract_text()
 
-        if page_text:
-            extracted_text += page_text + "\n"
+        if page_text and page_text.strip():
+            document = Document(
+                page_content=page_text,
+                metadata={
+                    "source": uploaded_file.name,
+                    "page": page_number,
+                },
+            )
 
-    return extracted_text
+            documents.append(document)
+
+    return documents

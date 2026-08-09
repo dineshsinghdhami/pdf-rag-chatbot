@@ -15,11 +15,26 @@ def get_embedding_model():
 
 def generate_embeddings(chunks):
     """
-    Generate embeddings for a list of text chunks.
+    Generate embeddings for text chunks.
+
+    Supports both:
+    - plain text strings
+    - LangChain Document objects
     """
 
     embedding_model = get_embedding_model()
 
-    embeddings = embedding_model.embed_documents(chunks)
+    texts = []
+
+    for chunk in chunks:
+
+        if hasattr(chunk, "page_content"):
+            texts.append(chunk.page_content)
+        else:
+            texts.append(str(chunk))
+
+    embeddings = embedding_model.embed_documents(
+        texts
+    )
 
     return embeddings
