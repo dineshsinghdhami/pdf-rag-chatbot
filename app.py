@@ -1,7 +1,7 @@
 import streamlit as st
 
-from utils.pdf_utils import extract_text_from_pdf
-from utils.text_utils import split_text_into_chunks
+from utils.pdf_utils import extract_documents_from_pdf
+from utils.text_utils import split_documents_into_chunks
 from utils.embedding_utils import generate_embeddings
 from utils.vector_store_utils import (
     create_vector_store,
@@ -31,8 +31,8 @@ st.write(
 if "processed_file_names" not in st.session_state:
     st.session_state.processed_file_names = []
 
-if "extracted_text" not in st.session_state:
-    st.session_state.extracted_text = None
+if "documents" not in st.session_state:
+    st.session_state.documents = None
 
 if "chunks" not in st.session_state:
     st.session_state.chunks = None
@@ -45,7 +45,7 @@ if "vector_store" not in st.session_state:
 
 
 # -------------------------------------------------
-# Multiple PDF Upload
+# Upload PDFs
 # -------------------------------------------------
 
 uploaded_files = st.file_uploader(
@@ -71,7 +71,9 @@ if uploaded_files:
     st.write("Uploaded files:")
 
     for uploaded_file in uploaded_files:
-        st.write(f"- {uploaded_file.name}")
+        st.write(
+            f"- {uploaded_file.name}"
+        )
 
     try:
 
@@ -88,33 +90,29 @@ if uploaded_files:
                 "Processing PDF documents..."
             ):
 
-                combined_text = ""
+                all_documents = []
 
                 # -----------------------------------------
-                # Extract text from every uploaded PDF
+                # Extract page documents from PDFs
                 # -----------------------------------------
 
                 for uploaded_file in uploaded_files:
 
-                    pdf_text = extract_text_from_pdf(
-                        uploaded_file
+                    pdf_documents = (
+                        extract_documents_from_pdf(
+                            uploaded_file
+                        )
                     )
 
-                    if pdf_text.strip():
-
-                        combined_text += (
-                            f"\n\n"
-                            f"===== DOCUMENT: {uploaded_file.name} ====="
-                            f"\n\n"
-                        )
-
-                        combined_text += pdf_text
+                    all_documents.extend(
+                        pdf_documents
+                    )
 
                 # -----------------------------------------
-                # Check extracted text
+                # Check for readable content
                 # -----------------------------------------
 
-                if not combined_text.strip():
+                if not all_documents:
 
                     st.warning(
                         "No readable text was found "
@@ -124,19 +122,24 @@ if uploaded_files:
                     st.stop()
 
                 # -----------------------------------------
-                # Split combined text into chunks
+                # Split documents into chunks
                 # -----------------------------------------
 
-                chunks = split_text_into_chunks(
-                    combined_text
+                chunks = split_documents_into_chunks(
+                    all_documents
                 )
 
                 # -----------------------------------------
-                # Generate embeddings
+                # Generate embeddings for testing/statistics
                 # -----------------------------------------
 
+                chunk_texts = [
+                    chunk.page_content
+                    for chunk in chunks
+                ]
+
                 embeddings = generate_embeddings(
-                    chunks
+                    chunk_texts
                 )
 
                 # -----------------------------------------
@@ -148,15 +151,15 @@ if uploaded_files:
                 )
 
                 # -----------------------------------------
-                # Save data in session state
+                # Save in session state
                 # -----------------------------------------
 
                 st.session_state.processed_file_names = (
                     uploaded_file_names
                 )
 
-                st.session_state.extracted_text = (
-                    combined_text
+                st.session_state.documents = (
+                    all_documents
                 )
 
                 st.session_state.chunks = (
@@ -183,11 +186,11 @@ if uploaded_files:
 
 
         # -------------------------------------------------
-        # Load saved session data
+        # Load session data
         # -------------------------------------------------
 
-        extracted_text = (
-            st.session_state.extracted_text
+        documents = (
+            st.session_state.documents
         )
 
         chunks = (
@@ -204,7 +207,7 @@ if uploaded_files:
 
 
         # -------------------------------------------------
-        # Processing Information
+        # Processing information
         # -------------------------------------------------
 
         st.subheader(
@@ -213,6 +216,10 @@ if uploaded_files:
 
         st.write(
             f"Total PDFs: {len(uploaded_files)}"
+        )
+
+        st.write(
+            f"Total PDF pages extracted: {len(documents)}"
         )
 
         st.write(
@@ -238,7 +245,7 @@ if uploaded_files:
 
 
         # -------------------------------------------------
-        # Ask Question
+        # Ask question
         # -------------------------------------------------
 
         st.subheader(
@@ -253,7 +260,7 @@ if uploaded_files:
         if user_question:
 
             # ---------------------------------------------
-            # Semantic Search
+            # Semantic search
             # ---------------------------------------------
 
             with st.spinner(
@@ -269,7 +276,7 @@ if uploaded_files:
                 )
 
             # ---------------------------------------------
-            # Generate Answer
+            # Generate answer
             # ---------------------------------------------
 
             with st.spinner(
@@ -283,7 +290,7 @@ if uploaded_files:
 
 
             # ---------------------------------------------
-            # Display Answer
+            # Display answer
             # ---------------------------------------------
 
             st.subheader(
@@ -296,19 +303,71 @@ if uploaded_files:
 
 
             # ---------------------------------------------
-            # Show Retrieved Sources
+            # Display citations
+            # ---------------------------------------------
+
+            st.subheader(
+                "Sources"
+            )
+
+            seen_sources = set()
+
+            for document in relevant_documents:
+
+                source = document.metadata.get(
+                    "source",
+                    "Unknown PDF",
+                )
+
+                page = document.metadata.get(
+                    "page",
+                    "Unknown",
+                )
+
+                source_key = (
+                    source,
+                    page,
+                )
+
+                if source_key not in seen_sources:
+
+                    st.write(
+                        f"📄 {source} — Page {page}"
+                    )
+
+                    seen_sources.add(
+                        source_key
+                    )
+
+
+            # ---------------------------------------------
+            # Retrieved source details
             # ---------------------------------------------
 
             with st.expander(
-                "View Retrieved Sources"
+                "View Retrieved Source Content"
             ):
 
                 for index, document in enumerate(
                     relevant_documents
                 ):
 
+                    source = document.metadata.get(
+                        "source",
+                        "Unknown PDF",
+                    )
+
+                    page = document.metadata.get(
+                        "page",
+                        "Unknown",
+                    )
+
                     st.markdown(
                         f"### Source {index + 1}"
+                    )
+
+                    st.caption(
+                        f"File: {source} | Page: {page}"
                     )
 
                     st.write(
@@ -319,22 +378,40 @@ if uploaded_files:
 
 
         # -------------------------------------------------
-        # View Combined Extracted Text
+        # View extracted pages
         # -------------------------------------------------
 
         with st.expander(
-            "View Extracted PDF Text"
+            "View Extracted PDF Pages"
         ):
 
-            st.text_area(
-                "PDF Content",
-                extracted_text,
-                height=300,
-            )
+            for index, document in enumerate(
+                documents[:5]
+            ):
+
+                source = document.metadata.get(
+                    "source",
+                    "Unknown PDF",
+                )
+
+                page = document.metadata.get(
+                    "page",
+                    "Unknown",
+                )
+
+                st.markdown(
+                    f"### {source} — Page {page}"
+                )
+
+                st.write(
+                    document.page_content
+                )
+
+                st.divider()
 
 
         # -------------------------------------------------
-        # View First Three Chunks
+        # View chunks
         # -------------------------------------------------
 
         with st.expander(
@@ -345,12 +422,26 @@ if uploaded_files:
                 chunks[:3]
             ):
 
+                source = chunk.metadata.get(
+                    "source",
+                    "Unknown PDF",
+                )
+
+                page = chunk.metadata.get(
+                    "page",
+                    "Unknown",
+                )
+
                 st.markdown(
                     f"### Chunk {index + 1}"
                 )
 
+                st.caption(
+                    f"File: {source} | Page: {page}"
+                )
+
                 st.write(
-                    chunk
+                    chunk.page_content
                 )
 
                 st.divider()
