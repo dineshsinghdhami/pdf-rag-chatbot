@@ -475,12 +475,18 @@ try:
 
             if source_key not in seen_sources:
 
+                snippet = document.page_content.strip()
+
+                if len(snippet) > 250:
+                 snippet = snippet[:250] + "..."
+
                 sources.append(
-                    {
-                        "file": source,
-                        "page": page,
-                    }
-                )
+    {
+        "file": source,
+        "page": page,
+        "snippet": snippet,
+    }
+)
 
                 seen_sources.add(
                     source_key
@@ -514,10 +520,16 @@ try:
 
                     for source in sources:
 
-                        st.caption(
-                            f"📄 {source['file']} "
-                            f"• Page {source['page']}"
-                        )
+                        st.markdown(
+    f"**📄 {source['file']} • Page {source['page']}**"
+)
+
+                st.caption(
+                    source.get(
+                        "snippet",
+                        "Source preview unavailable.",
+                    )
+                )
 
         # ---------------------------------------------
         # Save Assistant Response
