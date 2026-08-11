@@ -1,76 +1,58 @@
-# # PDF RAG Chatbot
+# PDF RAG Chatbot
 
-An AI-powered PDF Question Answering application that uses Retrieval-Augmented Generation (RAG) to answer questions from uploaded PDF documents.
+An AI-powered PDF Question Answering application built using Retrieval-Augmented Generation (RAG).
 
-Built with Python, Streamlit, LangChain, ChromaDB, Hugging Face Embeddings, and Groq LLM.
+Upload multiple PDF documents, ask questions about their content, and receive AI-generated answers with source page references and retrieved text snippets.
 
-## # Features
+## Features
 
-- Upload multiple PDF documents
-- Extract text page by page
-- Split documents into semantic chunks
-- Generate Hugging Face embeddings
-- Store and retrieve documents using ChromaDB
+- Multiple PDF upload
+- PDF text extraction and chunking
+- Hugging Face embeddings
+- ChromaDB vector storage
 - Semantic similarity search
-- AI-powered answers using Groq
-- Source filename and page number references
-- Chat interface with conversation history
-- Persistent Chroma vector database
+- Relevance-based retrieval filtering
+- Groq LLM integration
+- Streaming AI responses
+- Conversational follow-up questions
+- Chat history
+- Source filename and page references
+- Retrieved source snippets
+- SHA-256 document identification
 
-## # RAG Pipeline
+## RAG Pipeline
 
 ```text
-PDF Upload
-    ↓
+PDF Documents
+      ↓
 Text Extraction
-    ↓
+      ↓
 Text Chunking
-    ↓
+      ↓
 Embeddings
-    ↓
+      ↓
 ChromaDB
-    ↓
+      ↓
 Semantic Search
-    ↓
+      ↓
 Relevant Context
-    ↓
+      ↓
 Groq LLM
-    ↓
+      ↓
 Answer + Sources
 ```
 
-## # Technologies Used
+## Tech Stack
 
 - Python
 - Streamlit
 - LangChain
-- PyPDF
 - ChromaDB
 - Hugging Face Sentence Transformers
-- Groq API
-- Python Dotenv
+- Groq
+- PyPDF
 
-## # Project Structure
-
-```text
-pdf-rag-chatbot/
-│
-├── utils/
-│   ├── pdf_utils.py
-│   ├── text_utils.py
-│   ├── embedding_utils.py
-│   ├── vector_store_utils.py
-│   └── llm_utils.py
-│
-├── chroma_db/
-├── app.py
-├── requirements.txt
-├── README.md
-├── .gitignore
-└── .env
-```
-
-## # Installation
+## Installation
 
 Clone the repository:
 
@@ -104,34 +86,45 @@ Run the application:
 python -m streamlit run app.py
 ```
 
-## # Current Progress
+## Project Structure
 
-The core RAG pipeline is working successfully.
+```text
+pdf-rag-chatbot/
+├── utils/
+│   ├── pdf_utils.py
+│   ├── text_utils.py
+│   ├── embedding_utils.py
+│   ├── vector_store_utils.py
+│   └── llm_utils.py
+├── app.py
+├── requirements.txt
+├── README.md
+└── .gitignore
+```
 
-Completed:
+## What I Learned
 
-- Multiple PDF support
-- PDF text extraction
-- Document chunking
-- Embedding generation
-- Persistent ChromaDB
-- Semantic search
-- Groq LLM integration
-- Source filename and page references
-- Chat interface
-- Chat history
+This project helped me gain hands-on experience with:
 
-## # Future Improvements
+- Retrieval-Augmented Generation (RAG)
+- Vector embeddings and semantic search
+- Vector databases
+- LangChain document processing
+- LLM integration
+- Prompt engineering
+- Conversational context
+- Streaming LLM responses
+- Building AI applications with Streamlit
 
-- Conversational memory
-- Streaming responses
-- Improved PDF preview
-- Better document management
+## Future Improvements
+
 - Docker support
 - Cloud deployment
+- User authentication
+- Advanced document management
 
-## # Author
+## Author
 
 **Dinesh Singh Dhami**
 
-Built as a personal learning project to understand Retrieval-Augmented Generation (RAG), vector databases, semantic search, and LLM application development.
+Built as a hands-on project to understand and implement a complete Retrieval-Augmented Generation pipeline.
