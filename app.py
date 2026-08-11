@@ -11,6 +11,7 @@ from utils.vector_store_utils import (
 )
 from utils.llm_utils import stream_answer
 
+
 def generate_file_hash(uploaded_file):
     """
     Generate a unique SHA-256 hash for an uploaded file.
@@ -19,6 +20,7 @@ def generate_file_hash(uploaded_file):
     file_bytes = uploaded_file.getvalue()
 
     return hashlib.sha256(file_bytes).hexdigest()
+
 
 # -------------------------------------------------
 # Page Configuration
@@ -170,6 +172,7 @@ uploaded_file_names = sorted(
         for uploaded_file in uploaded_files
     ]
 )
+
 uploaded_file_hashes = sorted(
     [
         generate_file_hash(uploaded_file)
@@ -185,9 +188,9 @@ uploaded_file_hashes = sorted(
 try:
 
     if (
-    st.session_state.processed_file_hashes
-    != uploaded_file_hashes
-):
+        st.session_state.processed_file_hashes
+        != uploaded_file_hashes
+    ):
 
         with st.spinner(
             "Preparing your documents..."
@@ -211,7 +214,6 @@ try:
                     pdf_documents
                 )
 
-
             # ---------------------------------------------
             # Validate content
             # ---------------------------------------------
@@ -225,7 +227,6 @@ try:
 
                 st.stop()
 
-
             # ---------------------------------------------
             # Create chunks
             # ---------------------------------------------
@@ -233,7 +234,6 @@ try:
             chunks = split_documents_into_chunks(
                 all_documents
             )
-
 
             # ---------------------------------------------
             # Generate embeddings
@@ -243,7 +243,6 @@ try:
                 chunks
             )
 
-
             # ---------------------------------------------
             # Create vector database
             # ---------------------------------------------
@@ -252,14 +251,13 @@ try:
                 chunks
             )
 
-
             # ---------------------------------------------
             # Save session state
             # ---------------------------------------------
 
             st.session_state.processed_file_hashes = (
-    uploaded_file_hashes
-)
+                uploaded_file_hashes
+            )
 
             st.session_state.documents = (
                 all_documents
@@ -378,11 +376,6 @@ try:
                 message["content"]
             )
 
-
-            # ---------------------------------------------
-            # Display Saved Sources
-            # ---------------------------------------------
-
             if (
                 message["role"] == "assistant"
                 and message.get("sources")
@@ -426,7 +419,6 @@ try:
             }
         )
 
-
         # ---------------------------------------------
         # Display User Message
         # ---------------------------------------------
@@ -438,7 +430,6 @@ try:
             st.markdown(
                 user_question
             )
-
 
         # ---------------------------------------------
         # Retrieve Relevant Context
@@ -456,9 +447,6 @@ try:
                 )
             )
 
-
-        
-
         # ---------------------------------------------
         # Build Source List
         # ---------------------------------------------
@@ -466,7 +454,6 @@ try:
         sources = []
 
         seen_sources = set()
-
 
         for document in relevant_documents:
 
@@ -485,7 +472,6 @@ try:
                 page,
             )
 
-
             if source_key not in seen_sources:
 
                 sources.append(
@@ -499,36 +485,38 @@ try:
                     source_key
                 )
 
-
         # ---------------------------------------------
-        # Display AI Response
+        # Stream AI Response
         # ---------------------------------------------
 
         with st.chat_message(
-     "assistant"
-     ):
-
-         answer = st.write_stream(
-        stream_answer(
-            user_question,
-            relevant_documents,
-            st.session_state.chat_history,
-        )
-    )
-
-    if sources:
-
-        with st.expander(
-            f"📚 {len(sources)} source(s)"
+            "assistant"
         ):
 
-            for source in sources:
-
-                st.caption(
-                    f"📄 {source['file']} "
-                    f"• Page {source['page']}"
+            answer = st.write_stream(
+                stream_answer(
+                    user_question,
+                    relevant_documents,
+                    st.session_state.chat_history,
                 )
+            )
 
+            # -----------------------------------------
+            # Display Sources
+            # -----------------------------------------
+
+            if sources:
+
+                with st.expander(
+                    f"📚 {len(sources)} source(s)"
+                ):
+
+                    for source in sources:
+
+                        st.caption(
+                            f"📄 {source['file']} "
+                            f"• Page {source['page']}"
+                        )
 
         # ---------------------------------------------
         # Save Assistant Response
