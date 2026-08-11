@@ -524,12 +524,22 @@ try:
     f"**📄 {source['file']} • Page {source['page']}**"
 )
 
-                st.caption(
-                    source.get(
-                        "snippet",
-                        "Source preview unavailable.",
-                    )
-                )
+            relevant_documents = (
+    get_relevant_documents(
+        vector_store,
+        user_question,
+        k=5,
+        max_score=1.2,
+    )
+)
+
+            if not relevant_documents:
+
+             st.warning(
+                "No relevant information was found in the uploaded PDFs."
+            )
+
+             st.stop()
 
         # ---------------------------------------------
         # Save Assistant Response
