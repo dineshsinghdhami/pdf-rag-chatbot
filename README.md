@@ -1,10 +1,10 @@
-# PDF RAG Chatbot
+# # PDF RAG Chatbot
 
 An AI-powered PDF Question Answering application built using Retrieval-Augmented Generation (RAG).
 
 Upload multiple PDF documents, ask questions about their content, and receive AI-generated answers with source page references and retrieved text snippets.
 
-## Features
+## # Features
 
 - Multiple PDF upload
 - PDF text extraction and chunking
@@ -20,7 +20,7 @@ Upload multiple PDF documents, ask questions about their content, and receive AI
 - Retrieved source snippets
 - SHA-256 document identification
 
-## RAG Pipeline
+## # RAG Pipeline
 
 ```text
 PDF Documents
@@ -42,7 +42,7 @@ Groq LLM
 Answer + Sources
 ```
 
-## Tech Stack
+## # Tech Stack
 
 - Python
 - Streamlit
@@ -52,7 +52,7 @@ Answer + Sources
 - Groq
 - PyPDF
 
-## Installation
+## # Installation
 
 Clone the repository:
 
@@ -86,7 +86,7 @@ Run the application:
 python -m streamlit run app.py
 ```
 
-## Project Structure
+## # Project Structure
 
 ```text
 pdf-rag-chatbot/
@@ -102,7 +102,7 @@ pdf-rag-chatbot/
 └── .gitignore
 ```
 
-## What I Learned
+## # What I Learned
 
 This project helped me gain hands-on experience with:
 
@@ -116,14 +116,14 @@ This project helped me gain hands-on experience with:
 - Streaming LLM responses
 - Building AI applications with Streamlit
 
-## Future Improvements
+## # Future Improvements
 
 - Docker support
 - Cloud deployment
 - User authentication
 - Advanced document management
 
-## Author
+## # Author
 
 **Dinesh Singh Dhami**
 
