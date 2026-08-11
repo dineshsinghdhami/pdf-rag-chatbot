@@ -466,9 +466,10 @@ try:
         ):
 
             answer = generate_answer(
-                user_question,
-                relevant_documents,
-            )
+    user_question,
+    relevant_documents,
+    st.session_state.chat_history,
+)
 
 
         # ---------------------------------------------

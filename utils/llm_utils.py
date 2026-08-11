@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 
 
-# Force values from .env to replace older environment variables
 load_dotenv(override=True)
 
 
@@ -29,10 +28,16 @@ def get_llm():
     return llm
 
 
-def generate_answer(question, relevant_documents):
+def generate_answer(
+    question,
+    relevant_documents,
+    chat_history=None,
+):
     """
-    Generate an answer using the user's question
-    and retrieved PDF context.
+    Generate an answer using:
+    - the current question
+    - retrieved PDF context
+    - recent conversation history
     """
 
     llm = get_llm()
@@ -42,25 +47,61 @@ def generate_answer(question, relevant_documents):
         for document in relevant_documents
     )
 
+    conversation = ""
+
+    if chat_history:
+
+        recent_messages = chat_history[-6:]
+
+        for message in recent_messages:
+
+            role = message.get(
+                "role",
+                "user",
+            )
+
+            content = message.get(
+                "content",
+                "",
+            )
+
+            conversation += (
+                f"{role.capitalize()}: "
+                f"{content}\n"
+            )
+
     prompt = f"""
 You are a PDF question-answering assistant.
 
-Answer the user's question using only the provided PDF context.
+Answer using only the provided PDF context.
 
-If the answer cannot be found in the context, say:
+Use the conversation history only to understand
+follow-up references such as:
+"that", "it", "the second one", or "tell me more".
+
+Do not use conversation history as a source of factual
+information unless that information is also supported
+by the PDF context.
+
+If the answer cannot be found in the PDF context, say:
 "I could not find the answer in the uploaded PDF."
 
 Do not invent information.
 
+Conversation History:
+{conversation}
+
 PDF Context:
 {context}
 
-User Question:
+Current Question:
 {question}
 
 Answer:
 """
 
-    response = llm.invoke(prompt)
+    response = llm.invoke(
+        prompt
+    )
 
     return response.content
