@@ -9,7 +9,7 @@ from utils.vector_store_utils import (
     create_vector_store,
     search_vector_store,
 )
-from utils.llm_utils import generate_answer
+from utils.llm_utils import stream_answer
 
 def generate_file_hash(uploaded_file):
     """
@@ -457,20 +457,7 @@ try:
             )
 
 
-        # ---------------------------------------------
-        # Generate AI Answer
-        # ---------------------------------------------
-
-        with st.spinner(
-            "Thinking..."
-        ):
-
-            answer = generate_answer(
-    user_question,
-    relevant_documents,
-    st.session_state.chat_history,
-)
-
+        
 
         # ---------------------------------------------
         # Build Source List
@@ -518,26 +505,29 @@ try:
         # ---------------------------------------------
 
         with st.chat_message(
-            "assistant"
+     "assistant"
+     ):
+
+         answer = st.write_stream(
+        stream_answer(
+            user_question,
+            relevant_documents,
+            st.session_state.chat_history,
+        )
+    )
+
+    if sources:
+
+        with st.expander(
+            f"📚 {len(sources)} source(s)"
         ):
 
-            st.markdown(
-                answer
-            )
+            for source in sources:
 
-
-            if sources:
-
-                with st.expander(
-                    f"📚 {len(sources)} source(s)"
-                ):
-
-                    for source in sources:
-
-                        st.caption(
-                            f"📄 {source['file']} "
-                            f"• Page {source['page']}"
-                        )
+                st.caption(
+                    f"📄 {source['file']} "
+                    f"• Page {source['page']}"
+                )
 
 
         # ---------------------------------------------
