@@ -7,7 +7,7 @@ from utils.text_utils import split_documents_into_chunks
 from utils.embedding_utils import generate_embeddings
 from utils.vector_store_utils import (
     create_vector_store,
-    search_vector_store,
+    get_relevant_documents,
 )
 from utils.llm_utils import stream_answer
 
@@ -440,12 +440,13 @@ try:
         ):
 
             relevant_documents = (
-                search_vector_store(
-                    vector_store,
-                    user_question,
-                    k=3,
-                )
-            )
+    get_relevant_documents(
+        vector_store,
+        user_question,
+        k=5,
+        max_score=1.2,
+    )
+)
 
         # ---------------------------------------------
         # Build Source List
