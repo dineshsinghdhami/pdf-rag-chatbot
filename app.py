@@ -1,3 +1,5 @@
+import hashlib
+
 import streamlit as st
 
 from utils.pdf_utils import extract_documents_from_pdf
@@ -9,6 +11,14 @@ from utils.vector_store_utils import (
 )
 from utils.llm_utils import generate_answer
 
+def generate_file_hash(uploaded_file):
+    """
+    Generate a unique SHA-256 hash for an uploaded file.
+    """
+
+    file_bytes = uploaded_file.getvalue()
+
+    return hashlib.sha256(file_bytes).hexdigest()
 
 # -------------------------------------------------
 # Page Configuration
@@ -91,8 +101,8 @@ st.markdown(
 # Session State
 # -------------------------------------------------
 
-if "processed_file_names" not in st.session_state:
-    st.session_state.processed_file_names = []
+if "processed_file_hashes" not in st.session_state:
+    st.session_state.processed_file_hashes = []
 
 if "documents" not in st.session_state:
     st.session_state.documents = None
@@ -160,6 +170,12 @@ uploaded_file_names = sorted(
         for uploaded_file in uploaded_files
     ]
 )
+uploaded_file_hashes = sorted(
+    [
+        generate_file_hash(uploaded_file)
+        for uploaded_file in uploaded_files
+    ]
+)
 
 
 # -------------------------------------------------
@@ -169,9 +185,9 @@ uploaded_file_names = sorted(
 try:
 
     if (
-        st.session_state.processed_file_names
-        != uploaded_file_names
-    ):
+    st.session_state.processed_file_hashes
+    != uploaded_file_hashes
+):
 
         with st.spinner(
             "Preparing your documents..."
@@ -241,9 +257,9 @@ try:
             # Save session state
             # ---------------------------------------------
 
-            st.session_state.processed_file_names = (
-                uploaded_file_names
-            )
+            st.session_state.processed_file_hashes = (
+    uploaded_file_hashes
+)
 
             st.session_state.documents = (
                 all_documents
