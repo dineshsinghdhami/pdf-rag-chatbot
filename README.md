@@ -4,6 +4,14 @@ An AI-powered PDF Question Answering application built using Retrieval-Augmented
 
 Upload multiple PDF documents, ask questions about their content, and receive AI-generated answers with source page references and retrieved text snippets.
 
+## # Live Demo
+
+[https://dineshsinghdhami-pdf-rag-chatbot-app-k7xdn3.streamlit.app/](https://dineshsinghdhami-pdf-rag-chatbot-app-k7xdn3.streamlit.app/)
+
+## # Screenshot
+
+![PDF RAG Chatbot](assets/screenshot.png)
+
 ## # Features
 
 - Multiple PDF upload
@@ -90,6 +98,8 @@ python -m streamlit run app.py
 
 ```text
 pdf-rag-chatbot/
+├── assets/
+│   └── screenshot.png
 ├── utils/
 │   ├── pdf_utils.py
 │   ├── text_utils.py
@@ -114,17 +124,18 @@ This project helped me gain hands-on experience with:
 - Prompt engineering
 - Conversational context
 - Streaming LLM responses
-- Building AI applications with Streamlit
+- Building and deploying AI applications with Streamlit
 
 ## # Future Improvements
 
 - Docker support
-- Cloud deployment
 - User authentication
 - Advanced document management
 
 ## # Author
 
 **Dinesh Singh Dhami**
+
+GitHub: [github.com/dineshsinghdhami](https://github.com/dineshsinghdhami)
 
 Built as a hands-on project to understand and implement a complete Retrieval-Augmented Generation pipeline.
