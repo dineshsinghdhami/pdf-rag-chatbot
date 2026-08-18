@@ -1,7 +1,5 @@
 import hashlib
-
 import streamlit as st
-
 from utils.pdf_utils import extract_documents_from_pdf
 from utils.text_utils import split_documents_into_chunks
 from utils.embedding_utils import generate_embeddings
